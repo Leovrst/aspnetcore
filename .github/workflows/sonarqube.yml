@@ -39,6 +39,17 @@ jobs:
 
       - name: Restore ASP.NET Core
         run: ./restore.sh
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build JavaScript assets
+        shell: bash
+        run: |
+          npm ci
+          npm run build
 
       - name: Build and analyze
         shell: bash
@@ -65,7 +76,9 @@ jobs:
             /d:sonar.inclusions="src/Http/**"
 
           # Build ASP.NET Core HTTP projects
-          ./src/Http/build.sh
+          ./src/Http/build.sh \
+          -warnAsError false \
+          /p:TreatWarningsAsErrors=false
 
           # Send analysis results to SonarQube
           DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" end \
