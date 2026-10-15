@@ -48,8 +48,8 @@ jobs:
           SCANNER="$RUNNER_TEMP/sonar-scanner/dotnet-sonarscanner"
 
           DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" begin \
-            /k:"TON_PROJECT_KEY" \
-            /o:"TON_ORGANIZATION_KEY" \
+            /k:"SONAR_PROJECT_KEY" \
+            /o:"SONAR_ORGANIZATION" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.inclusions="src/Http/**"
