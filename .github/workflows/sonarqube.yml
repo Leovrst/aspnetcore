@@ -38,23 +38,33 @@ jobs:
       - name: Restore ASP.NET Core
         run: ./restore.sh
 
+      
       - name: Build and analyze
         shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
         run: |
           source ./activate.sh
 
           SCANNER="$RUNNER_TEMP/sonar-scanner/dotnet-sonarscanner"
 
+          # Vérifier que les variables sont renseignées
+          test -n "$SONAR_TOKEN"
+          test -n "$SONAR_PROJECT_KEY"
+          test -n "$SONAR_ORGANIZATION"
+
           DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" begin \
-            /k:"SONAR_PROJECT_KEY" \
-            /o:"SONAR_ORGANIZATION" \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.inclusions="src/Http/**"
 
           ./src/Http/build.sh
 
+          DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" end \
+            /d:sonar.token="$SONAR_TOKEN"
           DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" end \
             /d:sonar.token="$SONAR_TOKEN"
