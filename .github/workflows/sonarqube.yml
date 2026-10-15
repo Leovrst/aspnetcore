@@ -1,0 +1,60 @@
+
+name: SonarQube - Analyse ASP.NET Core
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    name: Build and analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Install SonarScanner
+        shell: bash
+        run: |
+          echo "SCANNER_DOTNET_ROOT=$(dirname "$(readlink -f "$(command -v dotnet)")")" >> "$GITHUB_ENV"
+          cd "$RUNNER_TEMP"
+          dotnet tool install dotnet-sonarscanner \
+            --tool-path "$RUNNER_TEMP/sonar-scanner"
+
+      - name: Restore ASP.NET Core
+        run: ./restore.sh
+
+      - name: Build and analyze
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          source ./activate.sh
+
+          SCANNER="$RUNNER_TEMP/sonar-scanner/dotnet-sonarscanner"
+
+          DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" begin \
+            /k:"TON_PROJECT_KEY" \
+            /o:"TON_ORGANIZATION_KEY" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.inclusions="src/Http/**"
+
+          ./src/Http/build.sh
+
+          DOTNET_ROOT="$SCANNER_DOTNET_ROOT" "$SCANNER" end \
+            /d:sonar.token="$SONAR_TOKEN"
